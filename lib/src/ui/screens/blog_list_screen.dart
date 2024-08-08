@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blog_explorer/src/data/model/blog_model.dart';
 import 'package:flutter_blog_explorer/src/logic/bloc/blog_list_bloc/blog_list_bloc.dart';
 import 'package:flutter_blog_explorer/src/ui/screens/detail_blog_view_screen.dart';
+import 'package:flutter_blog_explorer/src/ui/widget/image_widget.dart';
 import 'package:flutter_blog_explorer/src/utils/dimensioins.dart';
 
 class BlogListScreen extends StatefulWidget {
@@ -48,6 +48,16 @@ class _BlogListScreenState extends State<BlogListScreen> {
         child: Scaffold(
           appBar: AppBar(
             title: const Text('Blogs and Articles'),
+            actions: [
+              IconButton(
+                  tooltip: 'Show Favorite',
+                  onPressed: () {
+                    context
+                        .read<BlogListBloc>()
+                        .add(ToggleFilterFavoritesEvent());
+                  },
+                  icon: const Icon(Icons.filter_alt_outlined))
+            ],
           ),
           body: RefreshIndicator(
             onRefresh: () async {
@@ -58,6 +68,9 @@ class _BlogListScreenState extends State<BlogListScreen> {
             },
             child: BlocBuilder<BlogListBloc, BlogListBlocState>(
                 builder: (context, bloglistState) {
+              final isFilterState =
+                  (bloglistState is BlogListBlocLoadedState) &&
+                      bloglistState.filterFavorites;
               if (bloglistState is BlogListBlocLoadingState) {
                 return const Center(child: CircularProgressIndicator());
               }
@@ -65,6 +78,10 @@ class _BlogListScreenState extends State<BlogListScreen> {
               if (bloglistState is BlogListBlocInitialState ||
                   bloglistState is BlogListBlocFailedState) {
                 blogList = [];
+              } else if (isFilterState) {
+                blogList = bloglistState.list
+                    .where((e) => e.isFavorite == true)
+                    .toList();
               } else {
                 blogList = (bloglistState as BlogListBlocLoadedState).list;
               }
@@ -75,17 +92,20 @@ class _BlogListScreenState extends State<BlogListScreen> {
                     children: [
                       Icon(Icons.cloud_off, size: vpH * 0.12),
                       Text(
-                        'No Blogs',
+                        !isFilterState ? 'No Blogs' : 'No Favorites Added',
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
-                      FilledButton(
-                          onPressed: () {
-                            final BlogListBloc bloc =
-                                context.read<BlogListBloc>();
-                            if (bloc.state is BlogListBlocLoadingState) return;
-                            bloc.add(RefreshScreenEvent());
-                          },
-                          child: const Text('Retry'))
+                      if (!isFilterState)
+                        FilledButton(
+                            onPressed: () {
+                              final BlogListBloc bloc =
+                                  context.read<BlogListBloc>();
+                              if (bloc.state is BlogListBlocLoadingState) {
+                                return;
+                              }
+                              bloc.add(RefreshScreenEvent());
+                            },
+                            child: const Text('Retry'))
                     ],
                   ),
                 );
@@ -115,10 +135,8 @@ class _BlogListScreenState extends State<BlogListScreen> {
                                   child: Stack(
                                     children: [
                                       Center(
-                                        child: Image.network(
-                                          blogList[index].imageUrl,
-                                          fit: BoxFit.fitWidth,
-                                        ),
+                                        child: ImageWidget(
+                                            imageUrl: blogList[index].imageUrl),
                                       ),
                                       Align(
                                         alignment: Alignment.topRight,
@@ -128,14 +146,14 @@ class _BlogListScreenState extends State<BlogListScreen> {
                                             iconSize: vpH * 0.04,
                                             onPressed: () {
                                               context.read<BlogListBloc>().add(
-                                                  MakeBlogFavoriteEvent(
-                                                      blogModelId:
-                                                          blogList[index].id));
+                                                  AddRemoveBlogFavoriteEvent(
+                                                      blogModel:
+                                                          blogList[index]));
                                             },
                                             icon: Icon(
                                                 blogList[index].isFavorite
-                                                    ? CupertinoIcons.heart_solid
-                                                    : CupertinoIcons.heart),
+                                                    ? Icons.favorite
+                                                    : Icons.favorite_border),
                                             color: Theme.of(context)
                                                 .colorScheme
                                                 .primary,

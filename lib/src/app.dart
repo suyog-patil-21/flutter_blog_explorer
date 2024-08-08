@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blog_explorer/src/logic/bloc/blog_list_bloc/blog_list_bloc.dart';
+import 'package:flutter_blog_explorer/src/logic/service/hive_service/hive_service.dart';
 import 'package:flutter_blog_explorer/src/ui/screens/blog_list_screen.dart';
 import 'package:flutter_blog_explorer/src/utils/app_route.dart';
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final BlogListBloc _blogListBloc;
   const MyApp({super.key, required BlogListBloc blogListBloc})
       : _blogListBloc = blogListBloc;
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
-      providers: [BlocProvider(create: (context) => _blogListBloc)],
+      providers: [BlocProvider(create: (context) => widget._blogListBloc)],
       child: MaterialApp(
         title: 'Blog App',
         theme: ThemeData(
@@ -32,5 +39,12 @@ class MyApp extends StatelessWidget {
         home: const BlogListScreen(),
       ),
     );
+  }
+    
+  @override
+  void dispose() async {
+    HiveService hiveService = HiveService();
+    await hiveService.closeAllBox();
+    super.dispose();
   }
 }

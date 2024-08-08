@@ -25,13 +25,13 @@ class BlogApi {
       }
     } on SocketException catch (err) {
       print('Error in BlogApi getBlogs SocketException:$err');
-      throw CustomException('No Internet');
+      throw CustomException(CustomExceptionMessage.noInternet.name);
     } on HttpException catch (err) {
       print('Error in BlogApi getBlogs HttpException:$err');
-      throw CustomException('Cannot find data');
+      throw CustomException(CustomExceptionMessage.canNotFindData.name);
     } catch (err, errStack) {
       print('Error in BlogApi getBlogs $err\nErrorStack:$errStack');
-      throw CustomException('Something when wrong');
+      throw CustomException(CustomExceptionMessage.somethingWhenWorng.name);
     }
     return null;
   }
